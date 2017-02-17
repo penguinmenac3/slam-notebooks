@@ -29,14 +29,17 @@ class RosToNumpy(object):
     def on_odometry(self, data):
         quaternion = (data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w)
         pose = Pose(data.pose.pose.position.x, data.pose.pose.position.y, tf.transformations.euler_from_quaternion(quaternion)[2])
-        self.dataset.add_pose(data.header.stamp, pose)
+        time = data.header.stamp.to_sec()
+        self.dataset.add_pose(time , pose)
 
     def on_laser_front(self, data):
-        scan = Scan(data.header.stamp, data.ranges, self.lidar_front)
+        time = data.header.stamp.to_sec()
+        scan = Scan(time, data.ranges, self.lidar_front)
         self.dataset.add_laserscan(0, scan)
 
     def on_laser_back(self, data):
-        scan = Scan(data.header.stamp, data.ranges, self.lidar_back)
+        time = data.header.stamp.to_sec()
+        scan = Scan(time, data.ranges, self.lidar_back)
         self.dataset.add_laserscan(1, scan)
 
     def kill(self):

@@ -81,10 +81,10 @@ class Dataset(object):
         self.data["scanner_" + scanner_id + "_scans"] = []
 
     def add_laserscan(self, scanner_id, scan):
-        self.data["scanner_" + str(scanner_id) + "_scans"].append(scan.to_array())
+        self.data["scanner_" + str(scanner_id) + "_scans"].append(np.array(scan.to_array(), dtype=object))
 
     def add_pose(self, time, pose):
-        self.data["poses"].append(np.array([time, pose.to_array()]).flatten())
+        self.data["poses"].append(np.array([time, pose.to_array()], dtype=object))
 
     def get_pose(self, pose_id):
         if (pose_id >= len(self.data["poses"])):

@@ -25,7 +25,7 @@ class Scan(object):
         self.scanner = scanner
 
     def to_array(self):
-        return np.array([self.time, self.data]).flatten()
+        return [self.time, self.data]
 
     def to_str(self, padding=""):
         return '{\n  ' + padding + '"time": ' + str(self.time) + ',\n  ' + padding + '"data": ' + str(self.data[:4]) + ',\n  ' + padding + '"scanner": ' + self.scanner.to_str("  " + padding) + '' + padding + '\n}'
