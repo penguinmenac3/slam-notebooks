@@ -1,28 +1,50 @@
 import rospy
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
+import math
+import tf
+
+from dataset import Dataset
+from rangefinder import Laserscanner, Scan
+from pose import Pose
+
+DATASET = "../slam_dataset.npz"
+RESOLUTION_FRONT_LIDAR = 1081
+RESOLUTION_BACK_LIDAR = 811
+OFFSET_FRONT_LIDAR = Pose(0, 0, 0)
+OFFSET_BACK_LIDAR = Pose(0, 0, math.pi)
 
 class RosToNumpy(object):
-    def __init__(self, args):
+    def __init__(self):
+        self.dataset = Dataset()
+        self.lidar_front = Laserscanner(270.0 / float(RESOLUTION_FRONT_LIDAR), RESOLUTION_FRONT_LIDAR, OFFSET_FRONT_LIDAR)
+        self.lidar_back = Laserscanner(270.0 / float(RESOLUTION_BACK_LIDAR), RESOLUTION_BACK_LIDAR, OFFSET_BACK_LIDAR)
+        self.dataset.add_scanner(self.lidar_front)
+        self.dataset.add_scanner(self.lidar_back)
+
         self.odom_sub = rospy.Subscriber("/odom", Odometry, self.on_odometry)
         self.front_lidar_sub = rospy.Subscriber("/lidar_front", LaserScan, self.on_laser_front)
         self.back_lidar_sub = rospy.Subscriber("/lidar_back", LaserScan, self.on_laser_back)
 
     def on_odometry(self, data):
-        pass
+        quaternion = (data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w)
+        pose = Pose(data.pose.pose.position.x, data.pose.pose.position.y, tf.transformations.euler_from_quaternion(quaternion)[2])
+        self.dataset.add_pose(data.header.stamp, pose)
 
     def on_laser_front(self, data):
-        pass
+        scan = Scan(data.header.stamp, data.ranges, self.lidar_front)
+        self.dataset.add_laserscan(0, scan)
 
     def on_laser_back(self, data):
-        pass
+        scan = Scan(data.header.stamp, data.ranges, self.lidar_back)
+        self.dataset.add_laserscan(1, scan)
 
     def kill(self):
-        self.odom_sub.unsubscribe()
-        self.front_lidar_sub.unsubscribe()
-        self.back_lidar_sub.unsubscribe()
+        self.odom_sub.unregister()
+        self.front_lidar_sub.unregister()
+        self.back_lidar_sub.unregister()
 
-        # todo save
+        self.dataset.save(DATASET)
 
 
 def main():
