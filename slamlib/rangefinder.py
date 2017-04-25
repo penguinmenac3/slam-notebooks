@@ -1,18 +1,20 @@
 import numpy as np
 import json
+from pose import Pose
 
 class Laserscanner(object):
-    def __init__(self, angle_per_scan, number_of_scans, relative_to_base_link):
+    def __init__(self, angle_per_scan, number_of_scans, relative_to_base_link, scan_direction=-1):
         self.angle_per_scan = angle_per_scan
         self.number_of_scans = int(number_of_scans)
         self.relative_to_base_link = relative_to_base_link
+        self.scan_direction = scan_direction
 
     def to_array(self):
         return [self.angle_per_scan, self.number_of_scans, self.relative_to_base_link.x, self.relative_to_base_link.y, self.relative_to_base_link.theta]
 
     def ray(self, base_link_pose, scan_ray_id):
         pose = base_link_pose.clone().add_relative_pose(self.relative_to_base_link)
-        pose = pose.add_relative_pose(Pose(0, 0, self.angle_per_scan * (scan_ray_id - self.number_of_scans / 2.0)))
+        pose = pose.add_relative_pose(Pose(0, 0, self.scan_direction * self.angle_per_scan * (scan_ray_id - self.number_of_scans / 2.0)))
         return pose
 
     def to_str(self, padding=""):
@@ -29,3 +31,11 @@ class Scan(object):
 
     def to_str(self, padding=""):
         return '{\n  ' + padding + '"time": ' + str(self.time) + ',\n  ' + padding + '"data": ' + str(self.data[:4]) + ',\n  ' + padding + '"scanner": ' + self.scanner.to_str("  " + padding) + '' + padding + '\n}'
+
+    def get_rays(self, base_link_pose):
+        rays = []
+        for idx in range(len(self.data)):
+            date = (self.scanner.ray(base_link_pose, idx), self.data[idx])
+            rays.append(date)
+
+        return rays
